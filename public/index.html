@@ -198,7 +198,7 @@
     '<span class="arr">&larr;</span> <span class="res">{ status: "succeeded", amount: 4200 }</span>',
     '<span class="ok">&#10003; done &mdash; no human in the loop</span>'
   ];
-  const step = 430, start = 300;
+  const step = 430, start = 240, instant = 2;
   function run() {
     body.innerHTML = "";
     LINES.forEach((html, i) => {
@@ -206,7 +206,8 @@
       d.className = "tl";
       d.innerHTML = html;
       body.appendChild(d);
-      setTimeout(() => d.classList.add("show"), start + i * step);
+      if (i < instant) { d.classList.add("show"); }
+      else { setTimeout(() => d.classList.add("show"), start + (i - instant) * step); }
     });
     const cw = document.createElement("div");
     cw.className = "tl show";
