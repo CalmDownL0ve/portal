@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portal — scan your API</title>
+<meta name="description" content="Paste an OpenAPI spec and get a runnable MCP server, agent docs, and a readiness score." />
+<link rel="stylesheet" href="portal.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="logo">›_</span><span class="nm">PORTAL</span></a>
+    <div class="links">
+      <a href="index.html" class="hide-sm">Home</a>
+      <a href="index.html#how" class="hide-sm">How it works</a>
+      <span id="mode">checking…</span>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap" style="padding:26px 22px 60px">
+  <h1 style="font-size:26px">Scan your API</h1>
+  <p class="tag">Paste an OpenAPI spec → get a runnable MCP server, agent docs, and a readiness score.
+    Then run a live agent against the generated interface.</p>
+
+  <div class="grid-2" style="gap:18px;align-items:start">
+    <!-- input -->
+    <div>
+      <p class="label">1 · Your API spec (OpenAPI JSON)</p>
+      <div class="chips" id="chips"></div>
+      <textarea id="spec" spellcheck="false"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="gen">⚡ Generate agent interface</button>
+        <label class="btn btn-ghost" style="cursor:pointer">Upload .json
+          <input id="file" type="file" accept=".json,application/json" hidden /></label>
+      </div>
+      <div class="err" id="specErr" style="display:none"></div>
+    </div>
+
+    <!-- output -->
+    <div>
+      <p class="label">2 · Agent-ready output</p>
+      <div class="panel">
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="report">📊 Readiness</button>
+          <button class="tab" data-tab="server">🖥 MCP server</button>
+          <button class="tab" data-tab="tools">🔧 Tools</button>
+          <button class="tab" data-tab="docs">📄 llms.txt</button>
+          <button class="tab" data-tab="config">⚙ Claude config</button>
+        </div>
+        <div class="toolbar" id="toolbar" style="display:none">
+          <span class="fn" id="fn"></span>
+          <button class="btn btn-ghost btn-sm" id="copyBtn">Copy</button>
+          <button class="btn btn-ghost btn-sm" id="dlBtn">Download</button>
+        </div>
+        <div class="out" id="out"><div class="empty">Hit generate to see the readiness score, MCP server, docs, and config.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- playground -->
+  <div style="margin-top:26px">
+    <p class="label">3 · Agent playground — a live agent uses the interface you just generated</p>
+    <div class="pg" id="pg">
+      <div class="feed" id="feed">
+        <div class="empty" id="feedEmpty">Generate an interface first, then run an agent against it.</div>
+      </div>
+      <div class="composer">
+        <input id="prompt" placeholder="Ask the agent to do something…" value="Find me a sci-fi book under $13 and order one copy." />
+        <button class="btn btn-amber" id="run" disabled>➤ Run</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot" id="foot">⧉ Prototype · tool calls run against mocked data so the loop completes offline.</p>
+</main>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
