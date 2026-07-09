@@ -1,0 +1,25 @@
+{
+  "name": "portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turn any API into an interface AI agents can use — generate a runnable MCP server, agent docs, and a readiness score from an OpenAPI spec.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test/mcp-smoke.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "agents",
+    "openapi",
+    "llms-txt"
+  ],
+  "license": "MIT",
+  "author": "CalmDownL0ve"
+}

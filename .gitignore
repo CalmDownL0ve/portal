@@ -1,0 +1,6 @@
+.env
+node_modules/
+.DS_Store
+
+# keep private strategy/application docs out of the public repo
+docs/
