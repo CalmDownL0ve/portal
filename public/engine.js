@@ -338,9 +338,9 @@
     return '<svg viewBox="0 0 200 200" style="--gc:' + (color || gradeColor(score)) + '">' +
       '<path class="g-track" d="' + arc + '"/>' + ticks +
       '<path class="g-fill" d="' + arc + '" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-off="' + (100 - score) + '"/>' +
-      '<text class="g-grade" x="100" y="98" text-anchor="middle" dominant-baseline="central">' + grade + '</text>' +
-      '<text class="g-score" x="100" y="132" text-anchor="middle" data-score="' + score + '">0 / 100</text>' +
-      '<text class="g-lbl" x="100" y="150" text-anchor="middle">agent-ready</text></svg>';
+      '<text class="g-grade" x="100" y="97" text-anchor="middle">' + grade + '</text>' +
+      '<text class="g-score" x="100" y="124" text-anchor="middle" data-score="' + score + '">0 / 100</text>' +
+      '<text class="g-lbl" x="100" y="139" text-anchor="middle">agent-ready</text></svg>';
   }
 
   function animateGauge(root) {

@@ -184,7 +184,7 @@ h1,h2,h3,h4{margin:0}
 .g-fill{fill:none;stroke:var(--gc,var(--signal));stroke-width:8;stroke-linecap:round;
   filter:drop-shadow(0 0 7px var(--gc,var(--signal)));transition:stroke-dashoffset 1.5s var(--ease)}
 .g-tick{stroke:var(--line-lit);stroke-width:1.5}
-.g-grade{fill:var(--gc,var(--signal));font-family:var(--serif);font-weight:420;font-size:66px}
+.g-grade{fill:var(--gc,var(--signal));font-family:var(--serif);font-weight:420;font-size:54px}
 .g-score{fill:var(--ink);font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.02em}
 .g-lbl{fill:var(--ink-faint);font-family:var(--mono);font-size:8.5px;letter-spacing:.24em;text-transform:uppercase}
 
