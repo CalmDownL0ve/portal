@@ -4,14 +4,21 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Portal — scan your API</title>
-<meta name="description" content="Paste an OpenAPI spec and get a runnable MCP server, agent docs, and a readiness score." />
+<meta name="description" content="Paste an OpenAPI spec and get a runnable MCP server, agent docs, and a readiness score. Then run a live agent against the generated interface." />
+<meta name="theme-color" content="#06080D" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="portal.css" />
 </head>
 <body>
+<div class="grain"></div>
+<div class="aurora a1"></div>
+<div class="aurora a2"></div>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html"><span class="logo">›_</span><span class="nm">PORTAL</span></a>
+    <a class="brand" href="index.html"><span class="mark"></span><span class="nm">PORTAL</span></a>
     <div class="links">
       <a href="index.html" class="hide-sm">Home</a>
       <a href="index.html#how" class="hide-sm">How it works</a>
@@ -20,61 +27,65 @@
   </div>
 </nav>
 
-<main class="wrap" style="padding:26px 22px 60px">
-  <h1 style="font-size:26px">Scan your API</h1>
-  <p class="tag">Paste an OpenAPI spec → get a runnable MCP server, agent docs, and a readiness score.
-    Then run a live agent against the generated interface.</p>
-
-  <div class="grid-2" style="gap:18px;align-items:start">
-    <!-- input -->
-    <div>
-      <p class="label">1 · Your API spec (OpenAPI JSON)</p>
-      <div class="chips" id="chips"></div>
-      <textarea id="spec" spellcheck="false"></textarea>
-      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn btn-primary" id="gen">⚡ Generate agent interface</button>
-        <label class="btn btn-ghost" style="cursor:pointer">Upload .json
-          <input id="file" type="file" accept=".json,application/json" hidden /></label>
-      </div>
-      <div class="err" id="specErr" style="display:none"></div>
+<main class="app-main">
+  <div class="wrap">
+    <div class="app-head">
+      <span class="eyebrow" style="display:block;margin-bottom:16px">The tool</span>
+      <h1 class="h-sec">Scan your API.</h1>
+      <p class="tag">Paste an OpenAPI spec and get a runnable MCP server, agent-readable docs, and a readiness score — then run a live agent against the interface you just generated.</p>
     </div>
 
-    <!-- output -->
-    <div>
-      <p class="label">2 · Agent-ready output</p>
-      <div class="panel">
-        <div class="tabs" id="tabs">
-          <button class="tab active" data-tab="report">📊 Readiness</button>
-          <button class="tab" data-tab="server">🖥 MCP server</button>
-          <button class="tab" data-tab="tools">🔧 Tools</button>
-          <button class="tab" data-tab="docs">📄 llms.txt</button>
-          <button class="tab" data-tab="config">⚙ Claude config</button>
+    <div class="io-grid">
+      <!-- input -->
+      <section>
+        <div class="io-head"><span class="n">1</span><span class="label">Your API spec — OpenAPI JSON</span></div>
+        <div class="chips" id="chips"></div>
+        <textarea id="spec" spellcheck="false" aria-label="OpenAPI spec"></textarea>
+        <div class="io-actions">
+          <button class="btn btn-primary" id="gen">Generate interface →</button>
+          <label class="btn btn-ghost" style="cursor:pointer">Upload .json
+            <input id="file" type="file" accept=".json,application/json" hidden /></label>
         </div>
-        <div class="toolbar" id="toolbar" style="display:none">
-          <span class="fn" id="fn"></span>
-          <button class="btn btn-ghost btn-sm" id="copyBtn">Copy</button>
-          <button class="btn btn-ghost btn-sm" id="dlBtn">Download</button>
+        <div class="err" id="specErr" style="display:none"></div>
+      </section>
+
+      <!-- output -->
+      <section>
+        <div class="io-head"><span class="n">2</span><span class="label">Agent-ready output</span></div>
+        <div class="panel">
+          <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="report">Readiness</button>
+            <button class="tab" data-tab="server">MCP server</button>
+            <button class="tab" data-tab="tools">Tools</button>
+            <button class="tab" data-tab="docs">llms.txt</button>
+            <button class="tab" data-tab="config">Claude config</button>
+          </div>
+          <div class="toolbar" id="toolbar" style="display:none">
+            <span class="fn" id="fn"></span>
+            <button class="btn btn-ghost btn-sm" id="copyBtn">Copy</button>
+            <button class="btn btn-ghost btn-sm" id="dlBtn">Download</button>
+          </div>
+          <div class="out" id="out"><div class="empty">Generate to see the readiness score, MCP server, agent docs, and Claude config.</div></div>
         </div>
-        <div class="out" id="out"><div class="empty">Hit generate to see the readiness score, MCP server, docs, and config.</div></div>
+      </section>
+    </div>
+
+    <!-- playground -->
+    <div class="pg-wrap">
+      <div class="io-head"><span class="n">3</span><span class="label">Agent playground — a live agent uses the interface you generated</span></div>
+      <div class="pg" id="pg">
+        <div class="feed" id="feed">
+          <div class="empty" id="feedEmpty">Generate an interface first, then give an agent a task to run against it.</div>
+        </div>
+        <div class="composer">
+          <input id="prompt" placeholder="Ask the agent to do something…" value="Find me a sci-fi book under $13 and order one copy." aria-label="Task for the agent" />
+          <button class="btn btn-amber" id="run" disabled>Run →</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- playground -->
-  <div style="margin-top:26px">
-    <p class="label">3 · Agent playground — a live agent uses the interface you just generated</p>
-    <div class="pg" id="pg">
-      <div class="feed" id="feed">
-        <div class="empty" id="feedEmpty">Generate an interface first, then run an agent against it.</div>
-      </div>
-      <div class="composer">
-        <input id="prompt" placeholder="Ask the agent to do something…" value="Find me a sci-fi book under $13 and order one copy." />
-        <button class="btn btn-amber" id="run" disabled>➤ Run</button>
-      </div>
-    </div>
+    <p class="foot" id="foot">Prototype · tool calls run against mocked data so the loop completes offline.</p>
   </div>
-
-  <p class="foot" id="foot">⧉ Prototype · tool calls run against mocked data so the loop completes offline.</p>
 </main>
 
 <script src="engine.js"></script>

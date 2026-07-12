@@ -69,21 +69,20 @@ function generate() {
   }
 }
 
-function gradeColor(score) { return score >= 90 ? "var(--green)" : score >= 75 ? "var(--cyan)" : score >= 55 ? "var(--amber)" : "var(--red)"; }
-
 function render(tab) {
   const out = $("out"), tb = $("toolbar");
-  if (!BUILT) { out.innerHTML = '<div class="empty">Hit generate to see the readiness score, MCP server, docs, and config.</div>'; tb.style.display = "none"; return; }
+  if (!BUILT) { out.innerHTML = '<div class="empty">Generate to see the readiness score, MCP server, agent docs, and Claude config.</div>'; tb.style.display = "none"; return; }
   if (tab === "report") {
     tb.style.display = "none";
-    const a = BUILT.audit, col = gradeColor(a.score);
-    let h = '<div class="score"><div class="g" style="border-color:' + col + '"><b style="color:' + col + '">' + a.grade + '</b></div>';
-    h += '<div class="sub"><b>' + a.score + ' / 100</b><br />agent-readiness</div></div>';
+    const a = BUILT.audit;
+    let h = '<div class="report"><div class="gauge">' + Portal.gauge(a.score, a.grade, Portal.gradeColor(a.score)) + '</div><ul class="findings">';
     for (const f of a.findings) {
-      const c = f.level === "pass" ? "var(--green)" : f.level === "warn" ? "var(--amber)" : "var(--ink-faint)";
-      h += '<div class="finding"><span class="dot" style="background:' + c + '"></span><div><div>' + esc(f.text) + "</div>" + (f.fix ? '<div class="fix">' + esc(f.fix) + "</div>" : "") + "</div></div>";
+      const c = f.level === "pass" ? "var(--good)" : f.level === "warn" ? "var(--amber)" : "var(--info)";
+      h += '<li class="finding"><span class="dot" style="background:' + c + ';color:' + c + '"></span><div><div class="f-txt">' + esc(f.text) + '</div>' + (f.fix ? '<div class="fix">' + esc(f.fix) + '</div>' : '') + '</div></li>';
     }
+    h += '</ul></div>';
     out.innerHTML = h;
+    const g = out.querySelector('.gauge'); if (g) Portal.animateGauge(g);
     return;
   }
   const map = {
@@ -116,7 +115,7 @@ function addErr(t) { const d = document.createElement("div"); d.className = "err
 function addCall(ev) {
   const args = Object.entries(ev.input || {}).map(([k, v]) => k + ": " + JSON.stringify(v)).join(", ");
   const d = document.createElement("div"); d.className = "toolcall";
-  d.innerHTML = '<div class="head">🔧 <span style="color:var(--ink)">' + esc(ev.name) + '</span> <span class="args">(' + esc(args) + ')</span></div><pre style="display:none">' + esc(JSON.stringify(ev.output, null, 2)) + "</pre>";
+  d.innerHTML = '<div class="head"><span>▸</span> <span class="tk">' + esc(ev.name) + '</span> <span class="args">(' + esc(args) + ')</span></div><pre style="display:none">' + esc(JSON.stringify(ev.output, null, 2)) + "</pre>";
   d.querySelector(".head").onclick = () => { const p = d.querySelector("pre"); p.style.display = p.style.display === "none" ? "block" : "none"; };
   feed().appendChild(d); sc();
 }
