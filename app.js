@@ -10,8 +10,11 @@ const CATALOG = [
   { id: "bk_blindsight", title: "Blindsight", author: "Peter Watts", genre: "sci-fi", price: 9.99 },
   { id: "bk_deer_park", title: "The Deer Park", author: "Norman Mailer", genre: "literary", price: 16.0 }
 ];
+const rid = (p) => p + Math.random().toString(36).slice(2, 8);
 function mockExecute(name, input) {
+  input = input || {};
   const n = String(name).toLowerCase();
+  // bookshop
   if (n.includes("search")) {
     let r = CATALOG.slice();
     if (input.genre) r = r.filter((b) => b.genre.toLowerCase() === String(input.genre).toLowerCase());
@@ -19,10 +22,24 @@ function mockExecute(name, input) {
     if (input.q) { const q = String(input.q).toLowerCase(); const h = r.filter((b) => (b.title + b.author + b.genre).toLowerCase().includes(q)); if (h.length) r = h; }
     return r.slice(0, 3);
   }
-  if (n.includes("book")) return CATALOG.find((b) => b.id === input.id) || { error: "not_found" };
-  if (n.includes("order")) { const b = CATALOG.find((x) => x.id === input.bookId); return { orderId: "ord_" + Math.random().toString(36).slice(2, 8), status: "confirmed", book: b ? b.title : input.bookId, quantity: input.quantity || 1, eta: "2 business days" }; }
+  if (n.includes("order")) { const b = CATALOG.find((x) => x.id === input.bookId); return { orderId: rid("ord_"), status: "confirmed", book: b ? b.title : (input.bookId || CATALOG[0].title), quantity: input.quantity || 1, eta: "2 business days" }; }
+  if (n.includes("book")) return CATALOG.find((b) => b.id === input.id) || CATALOG[0];
+  // payments
+  if (n.includes("charge") && n.includes("get")) return { id: input.id || rid("ch_"), amount: 4000, currency: "usd", status: "succeeded", captured: true };
+  if (n.includes("charge")) return { id: rid("ch_"), amount: input.amount || 4000, currency: "usd", status: "succeeded", customer: input.customer || "cus_9x2" };
+  if (n.includes("refund")) return { id: rid("re_"), charge: input.charge || input.chargeId || "ch_prev", amount: input.amount || 4000, status: "succeeded" };
+  // weather
+  if (n.includes("forecast") || n.includes("weather")) return { location: input.city || input.location || "San Francisco", tempF: 64, conditions: "Partly cloudy", highF: 68, lowF: 55, updated: "just now" };
+  // generic
   return { ok: true, received: input };
 }
+
+// prompts tuned to each sample so the composer always fits the selected API
+const PROMPTS = {
+  bookshop: "Find me a sci-fi book under $13 and order one copy.",
+  payments: "Charge a customer $40, then refund it.",
+  weather: "What’s the forecast in San Francisco?"
+};
 
 // ---------- samples + input ----------
 function buildChips() {
@@ -35,6 +52,8 @@ function buildChips() {
       document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
       b.classList.add("active");
       $("spec").value = JSON.stringify(s.spec, null, 2);
+      if (PROMPTS[key]) $("prompt").value = PROMPTS[key];
+      generate();
     };
     box.appendChild(b);
   }
@@ -124,25 +143,81 @@ function thinkOn() { const d = document.createElement("div"); d.className = "thi
 function thinkOff() { const t = $("think"); if (t) t.remove(); }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function mockAgent(prompt, tools) {
-  const search = tools.find((t) => t.name.toLowerCase().includes("search"));
-  const order = tools.find((t) => t.name.toLowerCase().includes("order"));
-  const p = prompt.toLowerCase();
-  const price = (p.match(/\$?\s?(\d+(\.\d+)?)/) || [])[1];
-  const genre = /sci-?fi|science fiction/.test(p) ? "sci-fi" : /literary/.test(p) ? "literary" : null;
-  const wantOrder = /order|buy|purchase|get me|grab/.test(p);
-  let picked = null;
-  if (search) {
-    const input = {}; if (genre) input.genre = genre; if (price) input.maxPrice = Number(price);
-    await wait(450); thinkOff(); addSay("Searching the catalog for something that fits.");
-    const res = mockExecute(search.name, input); addCall({ name: search.name, input, output: res }); picked = res[0]; thinkOn(); await wait(450);
+function synthArgs(tool) {
+  const props = (tool.inputSchema && tool.inputSchema.properties) || {};
+  const req = (tool.inputSchema && tool.inputSchema.required) || [];
+  const keys = req.length ? req : Object.keys(props).slice(0, 2);
+  const out = {};
+  for (const k of keys) {
+    const t = ((props[k] || {}).type) || "string";
+    out[k] = (t === "integer" || t === "number") ? 1 : t === "boolean" ? true : /id$/i.test(k) ? "id_123" : "sample";
   }
-  if (wantOrder && order && picked) {
-    thinkOff(); const input = { bookId: picked.id, quantity: 1 };
-    addCall({ name: order.name, input, output: mockExecute(order.name, input) }); thinkOn(); await wait(400); thinkOff();
-    addSay("Done — ordered “" + picked.title + "” by " + picked.author + " for $" + picked.price + ". It’ll arrive in about 2 business days.");
-  } else if (picked) { thinkOff(); addSay("Top match: “" + picked.title + "” by " + picked.author + " ($" + picked.price + ")."); }
-  else { thinkOff(); addSay("I couldn't find a matching tool for that request in this spec."); }
+  return out;
+}
+
+async function mockAgent(prompt, tools) {
+  const p = prompt.toLowerCase();
+  const has = (re) => tools.find((t) => re.test(t.name.toLowerCase()));
+  const num = (p.match(/\$?\s?(\d+(\.\d+)?)/) || [])[1];
+  await wait(430); thinkOff();
+
+  // ----- bookshop -----
+  const searchT = has(/search/), orderT = has(/order/);
+  if (searchT) {
+    const input = {}; if (/sci-?fi|science fiction/.test(p)) input.genre = "sci-fi"; else if (/literary/.test(p)) input.genre = "literary"; if (num) input.maxPrice = Number(num);
+    addSay("Searching the catalog for something that fits.");
+    const res = mockExecute(searchT.name, input); addCall({ name: searchT.name, input, output: res });
+    const picked = res[0]; thinkOn(); await wait(450); thinkOff();
+    if (orderT && picked && /order|buy|purchase|get me|grab|copy/.test(p)) {
+      const oi = { bookId: picked.id, quantity: 1 }; addCall({ name: orderT.name, input: oi, output: mockExecute(orderT.name, oi) });
+      thinkOn(); await wait(400); thinkOff();
+      addSay("Done — ordered “" + picked.title + "” by " + picked.author + " for $" + picked.price + ". It’ll arrive in about 2 business days.");
+    } else if (picked) addSay("Top match: “" + picked.title + "” by " + picked.author + " ($" + picked.price + ").");
+    else addSay("No catalog match for that — try another genre or price.");
+    return;
+  }
+
+  // ----- payments -----
+  const chargeT = has(/charge/), refundT = has(/refund/), getChargeT = has(/get.*charge|charge.*get/);
+  if (chargeT || refundT) {
+    const amt = num ? Math.round(Number(num) * 100) : 4000;
+    addSay("Creating the charge, then confirming it settled.");
+    const cIn = { amount: amt, currency: "usd", customer: "cus_9x2" };
+    const charge = mockExecute((chargeT || {}).name || "createCharge", cIn); addCall({ name: (chargeT || {}).name || "createCharge", input: cIn, output: charge });
+    thinkOn(); await wait(430); thinkOff();
+    if (refundT && /refund/.test(p)) {
+      const rIn = { charge: charge.id, amount: amt }; addCall({ name: refundT.name, input: rIn, output: mockExecute(refundT.name, rIn) });
+      thinkOn(); await wait(380); thinkOff();
+      addSay("Charged $" + (amt / 100).toFixed(2) + " and refunded it — both succeeded (" + charge.id + ").");
+    } else if (getChargeT) {
+      const gIn = { id: charge.id }; addCall({ name: getChargeT.name, input: gIn, output: mockExecute(getChargeT.name, gIn) });
+      thinkOn(); await wait(360); thinkOff();
+      addSay("Charged $" + (amt / 100).toFixed(2) + " to cus_9x2 and confirmed it — status succeeded (" + charge.id + ").");
+    } else addSay("Charged $" + (amt / 100).toFixed(2) + " to cus_9x2 — status succeeded (" + charge.id + ").");
+    return;
+  }
+
+  // ----- weather -----
+  const fcT = has(/forecast|weather/);
+  if (fcT) {
+    const m = prompt.match(/in ([A-Za-z .'\-]+?)(\?|$|\.|,| today| tomorrow| now| this)/i);
+    const input = m ? { city: m[1].trim() } : { lat: 37.77, lon: -122.42 };
+    addSay("Pulling the latest forecast.");
+    const out = mockExecute(fcT.name, input); addCall({ name: fcT.name, input, output: out });
+    thinkOn(); await wait(420); thinkOff();
+    addSay("It’s " + out.tempF + "°F and " + String(out.conditions).toLowerCase() + " in " + out.location + " — high " + out.highF + "°, low " + out.lowF + "°.");
+    return;
+  }
+
+  // ----- generic (any pasted spec) -----
+  const read = has(/get|list|search|fetch|find|read|query|lookup|show/) || tools[0];
+  const write = has(/create|add|post|update|delete|send|make|submit|put/);
+  if (!read && !write) { addSay("I couldn't find a callable tool in this spec for that."); return; }
+  if (read) { const input = synthArgs(read); addSay("Calling " + read.name + " to handle that."); addCall({ name: read.name, input, output: mockExecute(read.name, input) }); thinkOn(); await wait(420); thinkOff(); }
+  if (write && write.name !== (read && read.name) && /(create|add|make|order|buy|send|update|delete|submit|charge|pay|book|reserve|new)/.test(p)) {
+    const input = synthArgs(write); addCall({ name: write.name, input, output: mockExecute(write.name, input) }); thinkOn(); await wait(380); thinkOff();
+    addSay("Done — " + write.name + " returned successfully.");
+  } else addSay("Called " + (read ? read.name : write.name) + " successfully — see the result above.");
 }
 
 let running = false;
@@ -163,16 +238,18 @@ async function health() {
   const b = $("mode");
   try {
     const d = await (await fetch("/api/health")).json();
-    if (d.keyPresent) { b.textContent = "live · " + d.model; b.className = "live"; $("foot").textContent = "Live · the agent runs on " + d.model + " using the tools generated from your spec (API responses are mocked)."; }
-    else { b.textContent = "mock mode · add API key"; b.className = "mock"; }
-  } catch { b.textContent = "static · mock mode"; b.className = "mock"; }
+    if (d.keyPresent) { b.textContent = "live · " + d.model; b.className = "live"; $("foot").textContent = "Live — the agent runs on " + d.model + " with the tools generated from your spec (API responses are simulated)."; }
+    else { b.textContent = "demo mode · add key for live"; b.className = "mock"; $("foot").textContent = "Demo mode — the agent runs a scripted pass over your generated tools on sample data. Add an ANTHROPIC_API_KEY to run it live."; }
+  } catch { b.textContent = "demo mode"; b.className = "mock"; $("foot").textContent = "Demo mode — the agent executes your generated tools against sample data, so the whole loop runs with zero setup."; }
 }
 
 // ---------- init ----------
 buildChips();
 $("spec").value = JSON.stringify(Portal.SAMPLES.bookshop.spec, null, 2);
+$("prompt").value = PROMPTS.bookshop;
 $("gen").onclick = generate;
 $("run").onclick = run;
 $("prompt").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
 document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => { document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active")); t.classList.add("active"); render(t.dataset.tab); }));
 health();
+generate(); // open pre-populated so the payoff is visible on arrival
