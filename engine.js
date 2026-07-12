@@ -71,8 +71,65 @@
     }
   };
 
+  // ---------- normalization: resolve local $ref, hoist path-level params, expand server vars ----------
+  // Real-world specs (Stripe, GitHub, ...) lean heavily on $ref and shared path-level parameters.
+  // We resolve those to plain objects up front so the rest of the engine only ever sees flat shapes.
+  function deref(root) {
+    let clone; try { clone = JSON.parse(JSON.stringify(root)); } catch (e) { return root; }
+    const get = (ref) => {
+      if (typeof ref !== "string" || ref[0] !== "#") return undefined;
+      let node = clone;
+      for (const raw of ref.slice(1).split("/").filter(Boolean)) {
+        const key = raw.replace(/~1/g, "/").replace(/~0/g, "~");
+        if (node == null) return undefined; node = node[key];
+      }
+      return node;
+    };
+    const walk = (node, depth, seen) => {
+      if (depth > 16 || node == null || typeof node !== "object") return node;
+      if (typeof node.$ref === "string") {
+        if (seen.has(node.$ref)) return {};                 // cycle -> break
+        const target = get(node.$ref);
+        if (target === undefined) return node;               // external/unresolvable -> leave as-is
+        const next = new Set(seen); next.add(node.$ref);
+        return walk(target, depth + 1, next);
+      }
+      if (Array.isArray(node)) return node.map((x) => walk(x, depth + 1, seen));
+      const out = {}; for (const k of Object.keys(node)) out[k] = walk(node[k], depth + 1, seen);
+      return out;
+    };
+    return walk(clone, 0, new Set());
+  }
+
+  function normalize(spec) {
+    if (!spec || typeof spec !== "object" || Array.isArray(spec)) return { paths: {} };
+    const s = deref(spec);
+    if (!s.paths || typeof s.paths !== "object") s.paths = {};
+    for (const item of Object.values(s.paths)) {
+      if (!item || typeof item !== "object") continue;
+      const shared = Array.isArray(item.parameters) ? item.parameters : null;
+      if (!shared) continue;
+      for (const [method, op] of Object.entries(item)) {
+        if (!METHODS.includes(method) || !op || typeof op !== "object") continue;
+        const own = Array.isArray(op.parameters) ? op.parameters : [];
+        const seen = new Set(own.filter(Boolean).map((p) => p.name + "|" + p.in));   // op params win
+        op.parameters = own.concat(shared.filter((p) => p && !seen.has(p.name + "|" + p.in)));
+      }
+    }
+    return s;
+  }
+
+  function baseUrl(spec) {
+    const srv = (spec.servers && spec.servers[0]) || null;
+    if (!srv || !srv.url) return "";
+    let u = String(srv.url);
+    if (srv.variables) for (const [k, v] of Object.entries(srv.variables)) u = u.split("{" + k + "}").join((v && v.default) || "");
+    return u;
+  }
+
   // ---------- spec -> tools (MCP shape, with HTTP metadata for the generated server) ----------
   function tools(spec) {
+    spec = normalize(spec);
     const arr = [];
     for (const [route, methods] of Object.entries((spec && spec.paths) || {})) {
       for (const [method, op] of Object.entries(methods)) {
@@ -81,6 +138,7 @@
         const desc = [op.summary, op.description].filter(Boolean).join(" — ") || "(no description provided)";
         const properties = {}, required = [], query = [], pathParams = [], body = [];
         for (const p of op.parameters || []) {
+          if (!p || !p.name) continue;
           properties[p.name] = { type: (p.schema && p.schema.type) || "string", description: p.description || "" };
           if (p.required) required.push(p.name);
           if (p.in === "query") query.push(p.name);
@@ -91,7 +149,7 @@
           for (const [k, v] of Object.entries(bschema.properties)) { properties[k] = { type: v.type || "string", description: v.description || "" }; body.push(k); }
           (bschema.required || []).forEach((r) => required.push(r));
         }
-        arr.push({ name, description: desc, inputSchema: { type: "object", properties, required }, method, path: route, query, pathParams, body });
+        arr.push({ name, description: desc, inputSchema: { type: "object", properties, required: [...new Set(required)] }, method, path: route, query, pathParams, body });
       }
     }
     return arr;
@@ -106,9 +164,11 @@
   function gradeFor(score) { return score >= 90 ? "A" : score >= 75 ? "B" : score >= 60 ? "C" : score >= 40 ? "D" : "F"; }
 
   function audit(spec) {
+    spec = normalize(spec);
     const f = [];
-    if (!spec.servers || !spec.servers.length) f.push({ level: "warn", text: "No server URL declared", fix: "Agents need a base URL to route calls." });
-    else f.push({ level: "pass", text: "Base URL set (" + spec.servers[0].url + ")" });
+    const base = baseUrl(spec);
+    if (!base) f.push({ level: "warn", text: "No server URL declared", fix: "Agents need a base URL to route calls." });
+    else f.push({ level: "pass", text: "Base URL set (" + base + ")" });
     const t = tools(spec);
     f.push({ level: t.length ? "pass" : "warn", text: t.length + " callable operation" + (t.length === 1 ? "" : "s") + " found", fix: t.length ? "" : "No operations with a method were found in paths." });
     for (const [route, methods] of Object.entries(spec.paths || {})) {
@@ -132,8 +192,9 @@
 
   // ---------- llms.txt ----------
   function llms(spec) {
+    spec = normalize(spec);
     const ts = tools(spec);
-    const base = (spec.servers && spec.servers[0] && spec.servers[0].url) || "(set your base URL)";
+    const base = baseUrl(spec) || "(set your base URL)";
     let out = "# " + ((spec.info && spec.info.title) || "API") + "\n\n> " + ((spec.info && spec.info.description) || "") + "\n\nBase URL: " + base + "\n\n## Tools an agent can call\n\n";
     for (const t of ts) {
       out += "### " + t.name + "\n" + t.description + "\n";
@@ -226,8 +287,9 @@
   }
 
   function mcpServer(spec) {
+    spec = normalize(spec);
     const ts = tools(spec);
-    const base = (spec.servers && spec.servers[0] && spec.servers[0].url) || "https://api.example.com";
+    const base = baseUrl(spec) || "https://api.example.com";
     const info = { name: serverName(spec), version: (spec.info && spec.info.version) || "1.0.0" };
     const compact = ts.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, method: t.method, path: t.path, query: t.query, pathParams: t.pathParams, body: t.body }));
     const header = [
@@ -254,7 +316,50 @@
     return JSON.stringify(cfg, null, 2);
   }
 
-  const Portal = { SAMPLES, METHODS, tools, anthropicTools, audit, llms, mcpServer, claudeConfig, serverName };
+  // ---------- readiness gauge (shared SVG instrument, browser-only) ----------
+  function gradeColor(score) {
+    return score >= 90 ? "var(--good)" : score >= 75 ? "var(--signal)" : score >= 55 ? "var(--amber)" : "var(--bad)";
+  }
+
+  // Returns SVG markup for the gauge. Renders hidden; call animateGauge() to draw it in.
+  function gauge(score, grade, color) {
+    score = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+    const R = 78, cx = 100, cy = 100, r1 = 63, r2 = 70;
+    const rad = (d) => (d * Math.PI) / 180;
+    const pt = (d, r) => [(cx + r * Math.cos(rad(d))).toFixed(2), (cy + r * Math.sin(rad(d))).toFixed(2)];
+    const [sx, sy] = pt(135, R), [ex, ey] = pt(45, R);          // 270deg arc, gap at bottom
+    const arc = "M " + sx + " " + sy + " A " + R + " " + R + " 0 1 1 " + ex + " " + ey;
+    let ticks = "";
+    for (let i = 0; i <= 6; i++) {
+      const d = 135 + i * 45;
+      const [x1, y1] = pt(d, r1), [x2, y2] = pt(d, r2);
+      ticks += '<line class="g-tick" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+    }
+    return '<svg viewBox="0 0 200 200" style="--gc:' + (color || gradeColor(score)) + '">' +
+      '<path class="g-track" d="' + arc + '"/>' + ticks +
+      '<path class="g-fill" d="' + arc + '" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-off="' + (100 - score) + '"/>' +
+      '<text class="g-grade" x="100" y="98" text-anchor="middle" dominant-baseline="central">' + grade + '</text>' +
+      '<text class="g-score" x="100" y="132" text-anchor="middle" data-score="' + score + '">0 / 100</text>' +
+      '<text class="g-lbl" x="100" y="150" text-anchor="middle">agent-ready</text></svg>';
+  }
+
+  function animateGauge(root) {
+    if (!root) return;
+    const fill = root.querySelector(".g-fill"), sEl = root.querySelector(".g-score");
+    const off = fill ? Number(fill.getAttribute("data-off")) : 0;
+    const target = sEl ? Number(sEl.getAttribute("data-score")) : 0;
+    const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { if (fill) fill.style.strokeDashoffset = off; if (sEl) sEl.textContent = target + " / 100"; return; }
+    requestAnimationFrame(() => { if (fill) fill.style.strokeDashoffset = off; });
+    const dur = 1200, t0 = performance.now();
+    (function tick(now) {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      if (sEl) sEl.textContent = Math.round(e * target) + " / 100";
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  const Portal = { SAMPLES, METHODS, tools, anthropicTools, audit, llms, mcpServer, claudeConfig, serverName, normalize, baseUrl, gauge, animateGauge, gradeColor };
   if (typeof module !== "undefined" && module.exports) module.exports = Portal;
   else root.Portal = Portal;
 })(typeof self !== "undefined" ? self : this);

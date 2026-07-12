@@ -4,19 +4,26 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Portal — make your API agent-ready</title>
-<meta name="description" content="Portal turns your existing API into an MCP server, agent-readable docs, and a metered access layer — so AI agents can discover, authenticate, and use it." />
+<meta name="description" content="Paste an OpenAPI spec and Portal returns a runnable MCP server, agent-readable docs, and an agent-readiness score — the interface AI agents actually need to use your API." />
+<meta name="theme-color" content="#06080D" />
+<meta property="og:title" content="Portal — make your API agent-ready" />
+<meta property="og:description" content="Turn any OpenAPI spec into a runnable MCP server, agent docs, and a readiness score." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="portal.css" />
 </head>
 <body>
+<div class="grain"></div>
+<div class="aurora a1"></div>
+<div class="aurora a2"></div>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="/">
-      <span class="logo">›_</span>
-      <span class="nm">PORTAL</span>
-    </a>
+    <a class="brand" href="index.html"><span class="mark"></span><span class="nm">PORTAL</span></a>
     <div class="links">
-      <a href="#problem" class="hide-sm">Why agents fail</a>
+      <a href="#problem" class="hide-sm">The problem</a>
       <a href="#how" class="hide-sm">How it works</a>
       <a href="#score" class="hide-sm">The score</a>
       <a href="#faq" class="hide-sm">FAQ</a>
@@ -28,19 +35,17 @@
 <header class="hero">
   <div class="wrap hero-grid">
     <div>
-      <span class="eyebrow">MCP · llms.txt · agent access</span>
-      <h1>Make your API<br /><span class="accent">agent-ready</span> in one step.</h1>
-      <p class="lead">AI agents are already trying to use your product — and failing. They can't click your
-        dashboard, guess your parameters, or sign up through a form. Portal reads your OpenAPI spec and
-        generates a runnable MCP server, agent-readable docs, and a readiness score — so agents can
-        discover and use your API the way they actually work.</p>
+      <span class="eyebrow">MCP<span class="sep">/</span>llms.txt<span class="sep">/</span>agent access</span>
+      <h1 class="h-hero">Make your API<br /><em>agent&#8209;ready</em><br />in one step.</h1>
+      <p class="lead">AI agents already try to use your product — and fail. They can't click a dashboard,
+        guess your parameters, or sign up through a form. Paste your OpenAPI spec and Portal returns a
+        runnable MCP server, agent&#8209;readable docs, and a readiness score: the interface agents actually need.</p>
       <div class="cta-row">
         <a class="btn btn-primary" href="app.html">Scan your API →</a>
         <a class="btn btn-ghost" href="#how">See how it works</a>
       </div>
-      <p class="note">Free · runs on your spec · no account</p>
+      <p class="note">Free <b>·</b> runs on your spec <b>·</b> no account</p>
     </div>
-
     <div class="term" id="term">
       <div class="term-bar"><i></i><i></i><i></i><span class="t">agent ↔ ledgerline-mcp</span></div>
       <div class="term-body" id="termBody"></div>
@@ -48,174 +53,201 @@
   </div>
 </header>
 
-<section id="problem">
+<div class="wrap"><hr class="divider" /></div>
+
+<section class="section" id="problem">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head reveal">
       <span class="eyebrow">The problem</span>
-      <h2>Software was built for people who click. Agents don't click.</h2>
+      <h2 class="h-sec">Your API was built for people.<br /><em>Agents don't work like people.</em></h2>
     </div>
     <div class="grid-3">
-      <div class="card">
-        <h3>Built for clicks, not calls</h3>
-        <p>Forms, buttons, and dashboards assume a human. Agents drive them through brittle browser
-          automation that breaks on every redesign and burns tokens guessing where things are.</p>
+      <div class="card reveal">
+        <h3 class="h-card">Built for clicks, not calls</h3>
+        <p>Your product assumes a human at a screen — buttons, forms, a dashboard. An agent has none of that. It has your API and a few seconds to work out how to use it.</p>
       </div>
-      <div class="card">
-        <h3>Docs for people, not machines</h3>
-        <p>Marketing pages and PDFs never tell an agent which endpoint to call or what to pass. Agents
-          need structured, machine-readable instructions — not a getting-started blog post.</p>
+      <div class="card reveal d1">
+        <h3 class="h-card">Docs for people, not machines</h3>
+        <p>Human docs bury the one endpoint that matters under tutorials and marketing. An agent needs the callable surface — structured, complete, in one place.</p>
       </div>
-      <div class="card">
-        <h3>No way in without a human</h3>
-        <p>Signing up, getting keys, and paying still require a person in the loop. An agent can't
-          onboard itself to your product today, so it never becomes a customer.</p>
+      <div class="card reveal d2">
+        <h3 class="h-card">No way in without a human</h3>
+        <p>Signup flows and copy-paste keys assume someone is sitting there. Agents stall at the first screen that expects a click.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="how" class="band">
+<section class="section tight" id="how">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head reveal">
       <span class="eyebrow">How it works</span>
-      <h2>Your spec in. An agent interface out.</h2>
+      <h2 class="h-sec">Paste a spec. Get the interface <em>agents need.</em></h2>
     </div>
     <div class="grid-3">
-      <div class="card">
-        <div class="knum">01 — point</div>
-        <h3 style="margin-top:10px">Give it your spec</h3>
-        <p>Paste your OpenAPI spec or upload the file. No integration, no SDK, no change to your API.</p>
+      <div class="step reveal">
+        <span class="knum" data-n="01"><span class="ln"></span></span>
+        <h3 class="h-card">Give it your spec</h3>
+        <p>Paste your OpenAPI JSON or upload the file. Portal reads every path, parameter, and schema — resolving <span class="mono">$ref</span>s and shared params the way a real client would.</p>
       </div>
-      <div class="card">
-        <div class="knum">02 — generate</div>
-        <h3 style="margin-top:10px">Get your agent interface</h3>
-        <p>A runnable, zero-dependency MCP server, an <span class="mono">llms.txt</span>, and a readiness
-          score with concrete fixes. Download it and connect an agent in a minute.</p>
+      <div class="step reveal d1">
+        <span class="knum" data-n="02"><span class="ln"></span></span>
+        <h3 class="h-card">Get your agent interface</h3>
+        <p>Out comes a runnable, zero-dependency <span class="mono">MCP server</span>, an <span class="mono">llms.txt</span> for agent docs, a ready-to-paste Claude config, and a readiness score.</p>
       </div>
-      <div class="card">
-        <div class="knum">03 — host <span class="pill" style="margin-left:4px">soon</span></div>
-        <h3 style="margin-top:10px">Let agents onboard themselves</h3>
-        <p>A managed endpoint with programmatic keys, rate limits, and usage-based billing — so agents
-          sign up and pay without a human in the loop.</p>
+      <div class="step reveal d2">
+        <span class="knum" data-n="03"><span class="ln"></span></span>
+        <h3 class="h-card">Let agents onboard themselves <span class="pill">soon</span></h3>
+        <p>Point any MCP client at the server and the agent discovers your tools, reads their descriptions, and starts calling — no human in the loop.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="score">
+<section class="section" id="score">
   <div class="wrap">
-    <div class="sec-head">
-      <span class="eyebrow">The readiness score</span>
-      <h2>A grade for how ready your API is for agents.</h2>
-      <p class="lead" style="margin-top:14px">Like a performance score for the agent era. Portal grades naming,
-        descriptions, parameters, and auth — then tells you exactly what to fix. Run it on every release.</p>
+    <div class="sec-head reveal">
+      <span class="eyebrow">The score</span>
+      <h2 class="h-sec">A grade for how ready you <em>really</em> are.</h2>
     </div>
-    <div class="card">
-      <div class="grade-demo">
-        <div class="grade"><div><b>B</b><small>78 / 100</small></div></div>
-        <ul>
-          <li><span class="d" style="background:var(--green)"></span>3 callable operations found, base URL set</li>
-          <li><span class="d" style="background:var(--amber)"></span>“createOrder” has no description — agents pick tools by description</li>
-          <li><span class="d" style="background:var(--amber)"></span>No auth scheme defined — agents can't get keys without a human</li>
-          <li><span class="d" style="background:var(--ink-faint)"></span>Param “q” is a single letter — rename so agents infer intent</li>
+    <div class="gauge-wrap reveal">
+      <div class="gauge" id="demoGauge"></div>
+      <div>
+        <p class="lead" style="margin-bottom:24px">Portal reads your spec the way an agent would, scores how usable it is, and shows exactly what's holding it back. A sample run:</p>
+        <ul class="findings">
+          <li class="finding"><span class="dot" style="background:var(--good)"></span><div><div class="f-txt">Base URL declared — agents can route calls</div></div></li>
+          <li class="finding"><span class="dot" style="background:var(--good)"></span><div><div class="f-txt">3 callable operations found</div></div></li>
+          <li class="finding"><span class="dot" style="background:var(--amber)"></span><div><div class="f-txt">“createOrder” has no description</div><div class="fix">Agents pick tools by description. Add one line on when to use it.</div></div></li>
+          <li class="finding"><span class="dot" style="background:var(--amber)"></span><div><div class="f-txt">No auth scheme defined</div><div class="fix">Declare a security scheme so agents can authenticate without a human.</div></div></li>
+          <li class="finding"><span class="dot" style="background:var(--info)"></span><div><div class="f-txt">Param “q” is a single letter</div><div class="fix">Rename it — agents infer intent from parameter names.</div></div></li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
-<section id="who">
+<section class="section tight" id="who">
   <div class="wrap">
-    <div class="grid-2" style="align-items:center;gap:40px">
-      <div>
-        <span class="eyebrow">Who it's for</span>
-        <h2 style="margin:12px 0 14px">If you'll have agent traffic, you'll need this.</h2>
-        <p class="lead">API-first SaaS, developer tools and infrastructure, marketplaces, fintech, and anyone
-          whose product is worth calling programmatically. If a human integrates with you today, an agent
-          will try to tomorrow.</p>
+    <div class="grid-2" style="gap:44px;align-items:center">
+      <div class="reveal">
+        <span class="eyebrow" style="display:block;margin-bottom:18px">Who it's for</span>
+        <h2 class="h-sec" style="margin-bottom:22px">For teams whose <em>next users aren't people.</em></h2>
+        <p class="lead">API companies, SaaS platforms, and internal tools that want to be usable by the agents their customers are already building. When someone points Claude or a custom agent at your product, Portal is the difference between “it worked” and “it gave up.”</p>
       </div>
-      <div class="card">
+      <div class="callout reveal d1">
         <span class="eyebrow">Why now</span>
-        <h3 style="margin:12px 0 10px;font-size:19px">The next users won't click. They'll call.</h3>
-        <p class="dim" style="font-size:14.5px">Frontier models can now run real work end to end. The bottleneck
-          isn't the agent — it's that the software underneath was built for humans. The companies that make
-          themselves usable by agents first will collect the agent traffic everyone else is locked out of.
-          Portal is the fastest way to get there.</p>
+        <h3 class="h-card">The next integration isn't a person reading your docs.</h3>
+        <p>It's an agent reading your spec. The teams that make themselves callable first become the default tool in their category — the way being first with a mobile app, or first with a public API, once did.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="faq" class="band">
-  <div class="wrap" style="max-width:820px">
-    <div class="sec-head"><span class="eyebrow">FAQ</span><h2>Questions</h2></div>
-    <div class="faq">
-      <details open><summary>What is MCP?</summary><p>The Model Context Protocol — the emerging standard for how AI
-        agents discover and call tools. Portal generates a server that speaks it, so any MCP-capable agent
-        (Claude, and a growing list of others) can use your API directly.</p></details>
-      <details><summary>Do I have to change my API?</summary><p>No. Portal wraps your existing endpoints. The
-        generated server calls your real API; you don't rewrite anything.</p></details>
-      <details><summary>Are my keys safe?</summary><p>Yes. In the hosted playground the key stays server-side and
-        is never sent to the browser. The MCP server you download reads a token from its own environment.
-        Portal doesn't store your keys.</p></details>
-      <details><summary>What does it cost?</summary><p>Converting your spec is free. Managed hosting with
-        programmatic keys and usage metering will be usage-based when it launches.</p></details>
-      <details><summary>Is the generated code mine?</summary><p>Yes — the servers are zero-dependency, readable,
-        and yours to run anywhere. Nothing locks you in.</p></details>
+<section class="section" id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal" style="text-align:center;margin-left:auto;margin-right:auto">
+      <span class="eyebrow">Questions</span>
+      <h2 class="h-sec" style="margin-top:16px">The short version.</h2>
+    </div>
+    <div class="faq reveal">
+      <details>
+        <summary>What is MCP?<span class="mk">+</span></summary>
+        <p>The Model Context Protocol is an open standard for how AI agents call external tools. An MCP server exposes your API as a set of tools an agent can discover and use directly. Portal generates one from your spec — no framework, no dependencies.</p>
+      </details>
+      <details>
+        <summary>Do I have to change my API?<span class="mk">+</span></summary>
+        <p>No. Portal reads your existing OpenAPI spec and builds a separate interface layer on top. Your API stays exactly as it is.</p>
+      </details>
+      <details>
+        <summary>Are my keys safe?<span class="mk">+</span></summary>
+        <p>Portal never asks for your API keys. The generated server reads a token from its own environment at run time, on your machine. Nothing is sent anywhere.</p>
+      </details>
+      <details>
+        <summary>What does it cost?<span class="mk">+</span></summary>
+        <p>The generator is free and runs entirely in your browser. The optional live agent playground uses your own model key if you add one; otherwise it runs on mocked data.</p>
+      </details>
+      <details>
+        <summary>Is the generated code mine?<span class="mk">+</span></summary>
+        <p>Yes. The MCP server is plain, dependency-free code you own and can read top to bottom. Run it, edit it, ship it — it's yours.</p>
+      </details>
     </div>
   </div>
 </section>
 
-<section style="text-align:center;padding:88px 0">
-  <div class="wrap">
-    <h2 style="max-width:20ch;margin:0 auto 22px">See your API's grade in under a minute.</h2>
-    <a class="btn btn-primary" href="app.html" style="font-size:15px;padding:14px 22px">Scan your API →</a>
+<section class="section closer">
+  <div class="wrap reveal">
+    <h2 class="h-sec">See your API's grade in under a minute.</h2>
+    <a class="btn btn-primary" href="app.html">Scan your API →</a>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <span class="fl">PORTAL — make software agents can use.</span>
-    <span>
-      <a href="app.html">The tool</a>
+    <span class="fl">Portal — where APIs meet agents.</span>
+    <div class="flinks">
+      <a href="app.html">Open the tool</a>
       <a href="#how">How it works</a>
-      <a href="#faq">FAQ</a>
-    </span>
+      <a href="https://github.com/CalmDownL0ve/portal" target="_blank" rel="noopener">GitHub</a>
+    </div>
   </div>
 </footer>
 
+<script src="engine.js"></script>
 <script>
 (function () {
-  const body = document.getElementById("termBody");
-  if (!body) return;
-  const LINES = [
-    '<span class="mut">$</span> agent connect ledgerline-mcp',
-    '<span class="arr">&rarr;</span> initialize        <span class="mut">protocol 2024-11-05</span>',
-    '<span class="arr">&larr;</span> 3 tools available',
-    '<span class="arr">&rarr;</span> createCharge <span class="in">{ amount: 4200, currency: "usd" }</span>',
-    '<span class="arr">&larr;</span> <span class="res">{ id: "ch_9f2", status: "succeeded" }</span>',
-    '<span class="arr">&rarr;</span> getCharge <span class="in">{ id: "ch_9f2" }</span>',
-    '<span class="arr">&larr;</span> <span class="res">{ status: "succeeded", amount: 4200 }</span>',
-    '<span class="ok">&#10003; done &mdash; no human in the loop</span>'
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- hero terminal: an agent operating the generated server ---- */
+  var LINES = [
+    '<span class="mut"># an agent connects to your generated MCP server</span>',
+    '<span class="arr">&#8250;</span> <span class="in">initialize</span> <span class="mut">ledgerline-mcp</span>',
+    '<span class="res">ready &#183; 3 tools discovered</span>',
+    '',
+    '<span class="arr">&#8250;</span> <span class="mut">user:</span> refund the last $40 charge',
+    '<span class="res">calling</span> <span class="in">createRefund</span><span class="res">({ chargeId: "ch_8f2a", amount: 4000 })</span>',
+    '<span class="ok">&#10003; refunded $40.00 &#183; re_5d1c</span>',
+    '<span class="res">Done — refunded the $40 charge. Anything else?</span> <span class="caret"></span>'
   ];
-  const step = 430, start = 240, instant = 2;
-  function run() {
-    body.innerHTML = "";
-    LINES.forEach((html, i) => {
-      const d = document.createElement("div");
-      d.className = "tl";
-      d.innerHTML = html;
-      body.appendChild(d);
-      if (i < instant) { d.classList.add("show"); }
-      else { setTimeout(() => d.classList.add("show"), start + (i - instant) * step); }
+  var body = document.getElementById("termBody");
+  if (body) {
+    var tls = LINES.map(function (html) {
+      var d = document.createElement("div");
+      d.className = "tl"; d.innerHTML = html || "&nbsp;";
+      body.appendChild(d); return d;
     });
-    const cw = document.createElement("div");
-    cw.className = "tl show";
-    cw.innerHTML = '<span class="caret"></span>';
-    setTimeout(() => body.appendChild(cw), start + LINES.length * step);
-    setTimeout(run, start + LINES.length * step + 3400);
+    var instant = 2;
+    tls.forEach(function (el, i) { if (i < instant || reduce) el.classList.add("show"); });
+    if (!reduce) {
+      var i = instant;
+      var timer = setInterval(function () {
+        if (i >= tls.length) { clearInterval(timer); return; }
+        tls[i].classList.add("show"); i++;
+      }, 430);
+    }
   }
-  run();
+
+  /* ---- readiness gauge demo (grade B / 78) ---- */
+  var g = document.getElementById("demoGauge");
+  if (g && window.Portal) {
+    g.innerHTML = Portal.gauge(78, "B");
+    if (!("IntersectionObserver" in window) || reduce) { Portal.animateGauge(g); }
+    else {
+      var gio = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { Portal.animateGauge(g); gio.disconnect(); } });
+      }, { threshold: 0.4 });
+      gio.observe(g);
+    }
+  }
+
+  /* ---- scroll reveal ---- */
+  var revs = document.querySelectorAll(".reveal");
+  if (!("IntersectionObserver" in window)) { revs.forEach(function (el) { el.classList.add("in"); }); }
+  else {
+    var ro = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); ro.unobserve(e.target); } });
+    }, { threshold: 0.14, rootMargin: "0px 0px -8% 0px" });
+    revs.forEach(function (el) { ro.observe(el); });
+  }
 })();
 </script>
 </body>
